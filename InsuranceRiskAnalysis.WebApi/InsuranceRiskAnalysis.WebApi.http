@@ -1,0 +1,6 @@
+@InsuranceRiskAnalysis.WebApi_HostAddress = http://localhost:5291
+
+GET {{InsuranceRiskAnalysis.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
