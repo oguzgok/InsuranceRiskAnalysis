@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace InsuranceRiskAnalysis.Core.Entities
+﻿namespace InsuranceRiskAnalysis.Core.Entities
 {
-    // Kalıtım stratejisi: Table-Per-Hierarchy (TPH) kullanacağız.
     public abstract class RiskRule : BaseEntity
     {
         public string Name { get; set; }
