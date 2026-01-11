@@ -35,7 +35,6 @@ namespace InsuranceRiskAnalysis.WebApi.Controllers
 
             var result = await _riskService.AnalyzeAndSaveAsync(workItem);
 
-            // SENIOR DOKUNUŞU: Dashboard'a anlık bildirim gönder (Web Socket)
             // "ReceiveRiskUpdate" adında bir event fırlatıyoruz. Dashboard bunu dinleyecek.
             await _hubContext.Clients.All.SendAsync("ReceiveRiskUpdate", new
             {

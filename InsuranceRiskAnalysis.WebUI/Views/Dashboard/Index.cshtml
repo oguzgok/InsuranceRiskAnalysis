@@ -1,0 +1,145 @@
+﻿@model InsuranceRiskAnalysis.WebUI.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Risk Dashboard";
+}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Arama (Otomatik Tamamlama)</label>
+                <input type="text" name="search" class="form-control" list="topicOptions" value="@ViewBag.Search" placeholder="Konu veya içerik ara...">
+                <datalist id="topicOptions">
+                    <option value="">"Araç Sigortası"</option>
+                    <option value="">"Konut Hasarı"</option>
+                    <option value="">"Sağlık Provizyon"</option>
+                </datalist>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Risk Durumu</label>
+                <select name="statusFilter" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="1">Düşük Risk</option>
+                    <option value="2">Orta Risk</option>
+                    <option value="3">Yüksek Risk</option>
+                    <option value="4">Reddedildi</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Toplam İşlem</div>
+                <div class="card-body">
+                    <h1 class="card-title" id="totalCount">@Model.TotalWorkItems</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">Yüksek Riskli İşlem</div>
+                <div class="card-body">
+                    <h1 class="card-title" id="highRiskCount">@Model.HighRiskCount</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">Risk Dağılımı</div>
+                <div class="card-body">
+                    <canvas id="riskChart" style="max-height: 150px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Canlı Risk Akışı (SignalR)</h3>
+    <table class="table table-striped table-hover" id="riskTable">
+        <thead class="thead-dark">
+            <tr>
+                <th>Konu</th>
+                <th>Risk Skoru</th>
+                <th>Durum</th>
+                <th>Zaman</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.RecentWorkItems)
+            {
+                <tr>
+                    <td>@item.Topic</td>
+                    <td>@item.CalculatedRiskScore</td>
+                    <td>
+                        <span class="badge @(item.Status == InsuranceRiskAnalysis.Core.Enums.RiskStatus.HighRisk ? "bg-danger" : "bg-success")">
+                            @item.Status
+                        </span>
+                    </td>
+                    <td>@item.CreatedDate.ToShortTimeString()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // 1. Chart.js Kurulumu
+    const ctx = document.getElementById('riskChart').getContext('2d');
+    const riskChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Düşük', 'Yüksek', 'Red'],
+            datasets: [{
+                data: [10, 5, 2], // Başlangıçta dummy data veya Model'den gelebilir
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+            }]
+        }
+    });
+
+    // 2. SignalR Bağlantısı
+    // WebApi 5000 veya 5001 portunda çalışacak. Portu kontrol et!
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("http://localhost:5000/riskHub")
+        .configureLogging(signalR.LogLevel.Information)
+        .build();
+
+    connection.start().then(function () {
+        console.log("SignalR Connected!");
+    }).catch(function (err) {
+        return console.error(err.toString());
+    });
+
+    // 3. Veri Geldiğinde Ne Olacak?
+    connection.on("ReceiveRiskUpdate", function (data) {
+        // Tabloya yeni satır ekle (efektli olması için en üste)
+        var table = document.getElementById("riskTable").getElementsByTagName('tbody')[0];
+        var newRow = table.insertRow(0);
+
+        var cell1 = newRow.insertCell(0);
+        var cell2 = newRow.insertCell(1);
+        var cell3 = newRow.insertCell(2);
+        var cell4 = newRow.insertCell(3);
+
+        cell1.innerHTML = data.topic;
+        cell2.innerHTML = data.score;
+        cell3.innerHTML = `<span class="badge bg-info">${data.status}</span>`; // Yeni gelenler mavi olsun
+        cell4.innerHTML = new Date(data.date).toLocaleTimeString();
+
+        // Karttaki sayıyı artır (Basit JS animasyonu)
+        var countElem = document.getElementById("totalCount");
+        countElem.innerText = parseInt(countElem.innerText) + 1;
+
+        // Grafiği güncelle (Örnek olarak bir veri artırıyoruz)
+        riskChart.data.datasets[0].data[0] += 1;
+        riskChart.update();
+    });
+</script>

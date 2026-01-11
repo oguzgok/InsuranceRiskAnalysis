@@ -12,8 +12,7 @@ using Swashbuckle.AspNetCore.SwaggerGen; // Eklendi: Swagger geniþletmeleri için
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Tenant Service
-builder.Services.AddScoped<ITenantService, CurrentTenantService>();
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -28,7 +27,8 @@ builder.Services.AddScoped<IAgreementRepository, AgreementRepository>();
 builder.Services.AddScoped<IRiskService, RiskService>();
 builder.Services.AddScoped<IAgreementService, AgreementService>();
 
-
+// Tenant Service
+builder.Services.AddScoped<ITenantService, CurrentTenantService>();
 // 3. SignalR Ekleme
 builder.Services.AddSignalR();
 
