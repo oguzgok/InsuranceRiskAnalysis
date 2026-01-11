@@ -18,10 +18,10 @@ namespace InsuranceRiskAnalysis.Infrastructure.Data
         }
 
         // Constructor overloading (Dependency Injection için gerekli olabilir)
-        //public AppDbContext(DbContextOptions<AppDbContext> options, ITenantService tenantService) : base(options)
-        //{
-        //    _currentTenantId = tenantService?.GetTenantId();
-        //}
+        public AppDbContext(DbContextOptions<AppDbContext> options, ITenantService tenantService) : base(options)
+        {
+            _currentTenantId = tenantService?.GetTenantId();
+        }
 
         public DbSet<Partner> Partners { get; set; }
         public DbSet<Agreement> Agreements { get; set; }
@@ -30,31 +30,45 @@ namespace InsuranceRiskAnalysis.Infrastructure.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // ITenantEntity interface'ini implemente eden TÜM entity'lere otomatik filtre koyuyoruz.
-            // Böylece bir firma yanlışlıkla başka firmanın verisini asla göremez.
+            // 1. Reflection ile metodumuzu buluyoruz
+            var setQueryFilterMethod = GetType()
+                .GetMethod(nameof(SetGlobalQueryFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            // 2. Tüm entity'leri geziyoruz
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
+                // Eğer entity ITenantEntity interface'ini uyguluyorsa (Yani TenantId'si varsa)
                 if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
                 {
-                    //modelBuilder.Entity(entityType.ClrType)
-                    //    .AddQueryFilter<ITenantEntity>(e => e.TenantId == _currentTenantId);
+                    // Metodu o tip için özelleştir (Örn: SetGlobalQueryFilter<Partner>)
+                    var genericMethod = setQueryFilterMethod.MakeGenericMethod(entityType.ClrType);
+
+                    // Metodu çalıştır
+                    genericMethod.Invoke(this, new object[] { modelBuilder });
                 }
             }
 
-            // RiskRule tablosunda "Discriminator" kolonu oluşturup hangi tip kural olduğunu orada tutacak.
+            // Polymorphism Ayarları
             modelBuilder.Entity<RiskRule>()
                 .HasDiscriminator<string>("RuleType")
                 .HasValue<KeywordRiskRule>("Keyword")
                 .HasValue<AmountRiskRule>("Amount");
 
-            // İlişki Ayarları (Fluent API)
+            // İlişki Ayarları
             modelBuilder.Entity<Partner>()
                 .HasMany(p => p.Agreements)
                 .WithOne(a => a.Partner)
                 .HasForeignKey(a => a.PartnerId)
-                .OnDelete(DeleteBehavior.Restrict); // Veri kaybını önlemek için Cascade silmeyi kapatıyoruz.
+                .OnDelete(DeleteBehavior.Restrict);
 
             base.OnModelCreating(modelBuilder);
+        }
+
+        // Bu metot Reflection ile dinamik olarak çağrılacak
+        private void SetGlobalQueryFilter<T>(ModelBuilder builder) where T : class, ITenantEntity
+        {
+            // HasQueryFilter, EF Core'un standart metodudur
+            builder.Entity<T>().HasQueryFilter(e => e.TenantId == _currentTenantId);
         }
     }
 }
