@@ -1,5 +1,4 @@
-﻿using InsuranceRiskAnalysis.Core.Exceptions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,35 +8,16 @@ namespace InsuranceRiskAnalysis.Core.Entities
 {
     public class Agreement : BaseEntity
     {
-        public string Name { get; private set; }
-        public decimal RiskThreshold { get; private set; }
-        public AgreementStatus Status { get; private set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public decimal BaseRiskAmount { get; set; } // Anlaşma bazlı taban risk
 
-        public Agreement(string tenantId, string name, decimal riskThreshold)
-            : base(tenantId)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new DomainException("Agreement name cannot be empty.");
+        public int PartnerId { get; set; }
+        public virtual Partner Partner { get; set; }
 
-            if (riskThreshold < 0)
-                throw new DomainException("RiskThreshold cannot be negative.");
-
-            Name = name;
-            RiskThreshold = riskThreshold;
-            Status = AgreementStatus.Active;
-        }
-
-        public void UpdateRiskThreshold(decimal newThreshold)
-        {
-            if (newThreshold < 0)
-                throw new DomainException("RiskThreshold cannot be negative.");
-
-            RiskThreshold = newThreshold;
-        }
-
-        public void Close()
-        {
-            Status = AgreementStatus.Closed;
-        }
+        // Anlaşmaya bağlı risk kuralları (Polymorphism burada devreye girecek)
+        public virtual ICollection<RiskRule> RiskRules { get; set; }
     }
 }
