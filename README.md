@@ -18,7 +18,7 @@ Proje **.NET 8** üzerinde, **Onion (Clean) Architecture** prensipleriyle geliş
 
 ---
 
-## Kurulum ve Çalıştırma
+##  Kurulum ve Çalıştırma
 
 ### 1. Veritabanı Ayarı
 Yerel SQL Server (veya LocalDB) kullanılır. Yoksa Docker ile SQL'li ayağa kaldırılıp kullanabilirsiniz.
@@ -26,7 +26,7 @@ Yerel SQL Server (veya LocalDB) kullanılır. Yoksa Docker ile SQL'li ayağa kal
 ```csharp
 "Server=localhost;Database=InsuranceRiskDb;Trusted_Connection=True;TrustServerCertificate=True;"```
 
-### 2. Başlatma
+# 2. Başlatma
 
 İki ayrı terminal açın ve aşağıdaki komutları çalıştırın:
 
@@ -35,19 +35,19 @@ Bash
 
 cd WebApi
 dotnet run
-Port: http://localhost:5291/swagger/index.html (Swagger: /swagger)
+# Port: http://localhost:5000 (Swagger: /swagger)
 
 Terminal 2 (Frontend - Dashboard):
 Bash
 
 cd WebUI
 dotnet run
-Port: http://localhost:5xxx (Konsolda yazar)
+# Port: http://localhost:5xxx (Konsolda yazar)
 
-### Test Senaryoları
+# Test Senaryoları
 
 Sistemin hem Risk Motorunun hem de Veri İzolasyonunun çalıştığını kanıtlamak için aşağıdaki iki senaryoyu uygulayın.
-# Senaryo 1: Ana Firma (Global Sigorta) Testi
+Senaryo 1: Ana Firma (Global Sigorta) Testi
 
 Dashboard (WebUI), varsayılan olarak bu firmanın yönetim panelidir.
 
@@ -76,7 +76,7 @@ Sisteme ikinci bir firma olarak istek atacağız. Bu firma veritabanında var am
 
     API Key: rakip-secret-key-999
 
-    Beklenen: API 200 OK döner ve veriyi kaydeder. ANCAK Dashboard'da hiçbir değişiklik olmamalıdır. Bu, Firma A'nın Firma B'nin verisini görmüyor (Veri İzolasyonu).
+    Beklenen: API 200 OK döner ve veriyi kaydeder. ANCAK Dashboard'da hiçbir değişiklik olmamalıdır. Bu, Firma A'nın Firma B'nin verisini görmüypr (Veri İzolasyonu).
 
 cURL Komutu:
 ```
