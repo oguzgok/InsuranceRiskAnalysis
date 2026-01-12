@@ -1,4 +1,4 @@
-# Sigorta Risk Analizi ve Yönetim Sistemi (Insurance Risk Analysis)
+#  Sigorta Risk Analizi ve Yönetim Sistemi (Insurance Risk Analysis)
 
 Bu proje, sigorta sektöründeki birden fazla iş ortağından (Multi-Tenant) gelen talepleri toplayan, **polimorfik kurallarla dinamik risk analizi** yapan ve sonuçları **gerçek zamanlı (Real-time)** olarak yönetim paneline raporlayan dağıtık bir sistem simülasyonudur.
 
@@ -6,7 +6,7 @@ Bu proje, sigorta sektöründeki birden fazla iş ortağından (Multi-Tenant) ge
 
 Proje **.NET 8** üzerinde, **Onion (Clean) Architecture** prensipleriyle geliştirilmiştir.
 
-### Öne Çıkan Özellikler
+### Öne Çıkan "Senior" Yetkinlikleri
 
 1.  **Polymorphism & Strategy Pattern:** Risk motoru `if-else` blokları yerine OOP kalıtımı kullanır. Yeni bir kural eklendiğinde (örn: *Lokasyon Riski*) ana kod değişmez (Open/Closed Principle).
 2.  **Gerçek Multi-Tenancy:** Veri güvenliği **EF Core Global Query Filters** ile sağlanmıştır.
@@ -18,15 +18,15 @@ Proje **.NET 8** üzerinde, **Onion (Clean) Architecture** prensipleriyle geliş
 
 ---
 
-##  Kurulum ve Çalıştırma
+## Kurulum ve Çalıştırma
 
 ### 1. Veritabanı Ayarı
-Yerel SQL Server (veya LocalDB) kullanılır. Yoksa Docker ile SQL'li ayağa kaldırılıp kullanabilirsiniz.
+Docker zorunluluğu yoktur. Yerel SQL Server (veya LocalDB) kullanılır.
 `WebApi/Program.cs` ve `WebUI/Program.cs` içindeki bağlantı cümlesini kontrol edin:
 ```csharp
-"Server=localhost;Database=InsuranceRiskDb;Trusted_Connection=True;TrustServerCertificate=True;"```
+"Server=localhost;Database=InsuranceRiskDb;Trusted_Connection=True;TrustServerCertificate=True;"
 
-# 2. Başlatma
+2. Başlatma
 
 İki ayrı terminal açın ve aşağıdaki komutları çalıştırın:
 
@@ -38,13 +38,12 @@ dotnet run
 # Port: http://localhost:5000 (Swagger: /swagger)
 
 Terminal 2 (Frontend - Dashboard):
-Bash
 
 cd WebUI
 dotnet run
 # Port: http://localhost:5xxx (Konsolda yazar)
 
-# Test Senaryoları
+Test Senaryoları (Multi-Tenancy Kanıtı)
 
 Sistemin hem Risk Motorunun hem de Veri İzolasyonunun çalıştığını kanıtlamak için aşağıdaki iki senaryoyu uygulayın.
 Senaryo 1: Ana Firma (Global Sigorta) Testi
@@ -56,7 +55,7 @@ Dashboard (WebUI), varsayılan olarak bu firmanın yönetim panelidir.
     Beklenen: İstek atıldığında Dashboard anlık olarak güncellenmelidir.
 
 cURL Komutu:
-```
+
 curl -X 'POST' \
   'http://localhost:5000/api/WorkItems' \
   -H 'accept: */*' \
@@ -68,18 +67,19 @@ curl -X 'POST' \
   "declaredAmount": 25000,
   "agreementId": 1
 }'
-```
+
 Sonuç: Tabloya "Lüks Araç Kaskosu" düşer, Risk Skoru hesaplanır.
-# Senaryo 2: Rakip Firma (İzolasyon Testi)
+Senaryo 2: Rakip Firma (İzolasyon Testi)
 
 Sisteme ikinci bir firma olarak istek atacağız. Bu firma veritabanında var ama Dashboard'da yetkisi yok.
 
     API Key: rakip-secret-key-999
 
-    Beklenen: API 200 OK döner ve veriyi kaydeder. ANCAK Dashboard'da hiçbir değişiklik olmamalıdır. Bu, Firma A'nın Firma B'nin verisini görmüypr (Veri İzolasyonu).
+    Beklenen: API 200 OK döner ve veriyi kaydeder. ANCAK Dashboard'da hiçbir değişiklik olmamalıdır. Bu, Firma A'nın Firma B'nin verisini göremez (Veri İzolasyonu).
 
 cURL Komutu:
-```
+Bash
+
 curl -X 'POST' \
   'http://localhost:5000/api/WorkItems' \
   -H 'accept: */*' \
@@ -91,15 +91,15 @@ curl -X 'POST' \
   "declaredAmount": 5000,
   "agreementId": 2
 }'
-```
+
 Sonuç: Veri veritabanına "tenant-rakip-sigorta-02" ID'si ile yazılır ama "tenant-global-sigorta-01"e ayarlı Dashboard'da görünmez.
-# Mimari Yapı
+Mimari Yapı
 
 📦 InsuranceRiskAnalysis
  ┣ 📂 Core          -> Domain Entities (Saf C#)
  ┣ 📂 Infrastructure-> EF Core, Migrations, Seed Data
- ┣ 📂 Services      -> Business Logic
+ ┣ 📂 Services      -> Business Logic (Polymorphism buradadır)
  ┣ 📂 WebApi        -> Middleware (Auth), Controllers
  ┗ 📂 WebUI         -> MVC Dashboard, SignalR Client
 
-# Geliştirici Notu: Bu proje, Clean Architecture ve SOLID prensiplerine tam uyumluluk gözetilerek hazırlanmıştır.
+Geliştirici Notu: Bu proje, Clean Architecture ve SOLID prensiplerine tam uyumluluk gözetilerek hazırlanmıştır.
