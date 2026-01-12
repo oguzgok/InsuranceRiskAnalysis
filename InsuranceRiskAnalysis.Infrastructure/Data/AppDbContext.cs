@@ -10,15 +10,8 @@ namespace InsuranceRiskAnalysis.Infrastructure.Data
         // Bu sayede her sorguda "Where TenantId=..." yazmak zorunda kalmayacağız.
         private readonly string _currentTenantId;
 
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-            // Normalde bu değeri bir "CurrentTenantService"den inject ederiz.
-            // Şimdilik varsayılan bir değer veya null olabilir, WebApi katmanında bunu dolduracağız.
-            _currentTenantId = "default-tenant";
-        }
-
         // Constructor overloading (Dependency Injection için gerekli olabilir)
-        public AppDbContext(DbContextOptions<AppDbContext> options, ITenantService tenantService) : base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options, ITenantService tenantService = null) : base(options)
         {
             _currentTenantId = tenantService?.GetTenantId();
         }
@@ -64,6 +57,26 @@ namespace InsuranceRiskAnalysis.Infrastructure.Data
             base.OnModelCreating(modelBuilder);
         }
 
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            // ChangeTracker: EF Core'un hafızasındaki takip edilen nesneler
+            foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
+            {
+                // Eğer yeni bir kayıt ekleniyorsa (State == Added)
+                if (entry.State == EntityState.Added)
+                {
+                    // Ve henüz TenantId atanmamışsa (veya boşsa)
+                    if (string.IsNullOrEmpty(entry.Entity.TenantId))
+                    {
+                        // Context'teki mevcut TenantId'yi bas
+                        entry.Entity.TenantId = _currentTenantId;
+                    }
+                }
+            }
+
+            // İşlemi devam ettir
+            return base.SaveChangesAsync(cancellationToken);
+        }
         // Bu metot Reflection ile dinamik olarak çağrılacak
         private void SetGlobalQueryFilter<T>(ModelBuilder builder) where T : class, ITenantEntity
         {

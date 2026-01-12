@@ -17,7 +17,8 @@ builder.Services.AddScoped<IAgreementRepository, AgreementRepository>();
 builder.Services.AddScoped<IRiskService, RiskService>();
 builder.Services.AddScoped<IAgreementService, AgreementService>();
 
-builder.Services.AddScoped<ITenantService, CurrentTenantService>();
+//builder.Services.AddScoped<ITenantService, CurrentTenantService>();
+builder.Services.AddScoped<ITenantService, InsuranceRiskAnalysis.WebUI.Services.FixedTenantService>();
 
 builder.Services.AddControllersWithViews();
 

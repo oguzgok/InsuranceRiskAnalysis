@@ -13,31 +13,37 @@ namespace InsuranceRiskAnalysis.WebApi.Middlewares
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, IServiceProvider serviceProvider)
+        public async Task InvokeAsync(HttpContext context)
         {
-            // DI Scope'u manuel açıyoruz çünkü Middleware singleton olabilir ama servisler Scoped.
-            using (var scope = serviceProvider.CreateScope())
+            // Ana RequestServices içindeki AppDbContext'i sakın çağırma!
+            // Eğer çağırırsan, TenantId henüz set edilmediği için "boş" bir DbContext oluşur 
+            // ve Request boyunca o boş nesne kullanılır.
+
+            // Bunun yerine sadece API Key kontrolü için geçici (kullan-at) bir scope açıyoruz.
+            using (var scope = context.RequestServices.CreateScope())
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var tenantService = scope.ServiceProvider.GetRequiredService<ITenantService>();
+                var tempDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
                 // Header'dan API Key'i oku
                 if (context.Request.Headers.TryGetValue("X-ApiKey", out var extractedApiKey))
                 {
-                    // DB'den bu key kime ait bul (Senior not: Burası normalde Redis/Cache olmalı)
-                    // Global Query Filter'ı aşmak için IgnoreQueryFilters kullanıyoruz, 
-                    // çünkü henüz TenantId'yi bilmiyoruz!
-                    var partner = await dbContext.Partners
+                    // Geçici DbContext ile Partner'i bul
+                    var partner = await tempDbContext.Partners
                         .IgnoreQueryFilters()
                         .FirstOrDefaultAsync(p => p.ApiKey == extractedApiKey.ToString());
 
                     if (partner != null)
                     {
-                        // Bulduk! Servise set et. Artık DbContext bu ID'yi kullanacak.
-                        tenantService.SetTenantId(partner.TenantId);
+                        // BULDUK! Şimdi ANA (Main) Request scope'undaki TenantService'e yazıyoruz.
+                        // Dikkat: Burada 'context.RequestServices' kullanıyoruz, 'scope' değil.
+                        var mainTenantService = context.RequestServices.GetRequiredService<ITenantService>();
+                        mainTenantService.SetTenantId(partner.TenantId);
                     }
                 }
-            }
+            } // Scope burada ölür, tempDbContext yok olur.
+
+            // Artık Controller'a gidildiğinde, sistem AppDbContext'i İLK KEZ isteyecek.
+            // TenantService dolu olduğu için, AppDbContext doğru ID ile oluşacak!
 
             await _next(context);
         }

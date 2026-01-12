@@ -108,7 +108,7 @@
     // 2. SignalR Bağlantısı
     // WebApi 5000 veya 5001 portunda çalışacak. Portu kontrol et!
     const connection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5000/riskHub")
+        .withUrl("http://localhost:5291/riskHub")
         .configureLogging(signalR.LogLevel.Information)
         .build();
 

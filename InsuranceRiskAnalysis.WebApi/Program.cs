@@ -6,12 +6,12 @@ using InsuranceRiskAnalysis.Services.RiskServices;
 using InsuranceRiskAnalysis.WebApi.Hubs;
 using InsuranceRiskAnalysis.WebApi.Middlewares;
 using InsuranceRiskAnalysis.WebApi.Services;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Builder;
 using Swashbuckle.AspNetCore.SwaggerGen; // Eklendi: Swagger geniþletmeleri için gerekli
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -29,11 +29,19 @@ builder.Services.AddScoped<IAgreementService, AgreementService>();
 
 // Tenant Service
 builder.Services.AddScoped<ITenantService, CurrentTenantService>();
+
 // 3. SignalR Ekleme
 builder.Services.AddSignalR();
 
 // Standart Servisler
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Döngüsel baþvurularý (Circular References) görmezden gel
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        // Opsiyonel: JSON'u okunaklý basmak istersen (Pretty Print)
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -42,7 +50,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
         builder => builder
-            .WithOrigins("http://localhost:5000", "https://localhost:5001") // WebUI adresleri
+            .WithOrigins("http://localhost:5068", "https://localhost:5001") // WebUI adresleri
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials()); // SignalR için credential þart
